@@ -114,3 +114,5 @@ if not results_df.empty:
     results_df['Is_Significant'] = reject_null 
 
 print(results_df.sort_values(by='P-Value_Corrected'))
+results_df.to_csv("data/regression_results.csv", index=False)
+df_merged.to_csv("data/processed_merged.csv", index=False)
