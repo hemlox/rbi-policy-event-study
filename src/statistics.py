@@ -4,14 +4,14 @@ import statsmodels.formula.api as smf
 from statsmodels.stats.multitest import multipletests
 import json
 
-sectoral_tickers =["^NSEBANK","^CNXAUTO","^CNXIT","^CNXFMCG","^CNXPHARMA","^CNXMETAL","^CNXREALTY","^CNXENERGY","^CNXMEDIA","^CNXPSUBANK","NIFTY_FIN_SERVICE.NS","NIFTY_PVT_BANK.NS"]
+sectoral_tickers =["^NSEBANK","^CNXAUTO","^CNXIT","^CNXFMCG","^CNXPHARMA","^CNXPSUBANK", "^CNXREALTY","^CNXENERGY"]
 benchmark_ticker ="^NSEI"
 
 def Z_value_of_sentiment_scores():
-    with open ("data/raw_sentiment_scores.json", "r") as file:
+    with open ("data/final_sentiment_score_1.json", "r") as file:
         raw_sentiments = json.load(file)
 
-    df_sentiment = pd.DataFrame(list(raw_sentiments.items()), columns = ["filename", "raw_score"])
+    df_sentiment = pd.DataFrame(list(raw_sentiments.items()), columns =["filename", "raw_score"])
     types, date = [], []
     for filename in df_sentiment["filename"]:
         doc_type = filename[:3]
@@ -52,15 +52,23 @@ def ARR_calc():
     df_benchmark = df_benchmark.rename(columns={'Intraday_pct_change': 'Market_Return'})
     df_sectors = pd.merge(df_stocks, df_benchmark, on='Date', how='inner')
     df_sectors = df_sectors.dropna(subset=['Market_Return', 'Intraday_pct_change'])
-    df_sectors["Expected Return"] = np.nan
-    for ticker in sectoral_tickers:
-        mask = (df_sectors["Ticker"] == ticker)
-        sector_returns = df_sectors.loc[mask, "Intraday_pct_change"] 
-        market_returns = df_sectors.loc[mask, "Market_Return"]
-        if len(sector_returns) > 1 and len(market_returns) > 1:
-            covariance = np.cov(sector_returns, market_returns)
-            sector_beta = covariance[0, 1] / covariance[1, 1]
-            df_sectors.loc[mask, "Expected Return"] = market_returns * sector_beta
+    # having a static data for a 10 year period was insanely rod didnt reallly work
+    #ensure data is strictly sorted for rolling calcs
+    df_sectors = df_sectors.sort_values(by=['Ticker', 'Date'])
+    
+    #calculating rolling 120-day beta to capture market regime shifts (bypassing .apply() to avoid Pandas KeyError)
+    processed_groups =[]
+    for ticker_name, group in df_sectors.groupby('Ticker'):
+        group = group.copy()
+        rolling_cov = group['Intraday_pct_change'].rolling(window=120, min_periods=30).cov(group['Market_Return'])
+        rolling_var = group['Market_Return'].rolling(window=120, min_periods=30).var()
+        group['Rolling_Beta'] = rolling_cov / rolling_var
+        group['Expected Return'] = group['Market_Return'] * group['Rolling_Beta']
+        processed_groups.append(group)
+
+    #Reconstruct the dataframe safely
+    df_sectors = pd.concat(processed_groups)
+    
     df_sectors["ARR"] = df_sectors["Intraday_pct_change"] - df_sectors["Expected Return"]
     df_stocks = df_sectors
     return df_stocks, df_sectors
@@ -84,7 +92,7 @@ def date_cleaner(df_daily, df_stocks):
 
 df_merged = date_cleaner(df_daily, df_stocks)
 results = []
-raw_p_values = []
+raw_p_values =[]
 
 for ticker in sectoral_tickers:
     sector_data = df_merged[df_merged['Ticker'] == ticker]
