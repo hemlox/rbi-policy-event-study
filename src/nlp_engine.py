@@ -10,10 +10,10 @@ import scipy.stats as stats
 import numpy as np
 import json
 
-hawkish_label ="withdrawal of accommodation" 
-dovish_label = "accommodative monetary policy"
-neutral_label = "neutral monetary policy"
-LABELS = [hawkish_label, dovish_label, neutral_label]        
+hawkish_labels =["withdrawal of accommodation", "raising interest rates", "tightening monetary policy"]
+dovish_labels =["accommodative monetary policy", "lowering interest rates", "easing monetary policy"]
+neutral_labels =["neutral monetary policy", "maintaining current rates", "unchanged monetary stance"]
+ALL_LABELS = hawkish_labels + dovish_labels + neutral_labels        
 
 MaxEntropy = np.log2(3)
 EntropyThreshold = 0.90*MaxEntropy#placeholder for now will keep if it works properly
@@ -43,9 +43,12 @@ def sentiment_score(outputs):
     retained_chunks = []
     for result in outputs:
         score_map = dict(zip(result["labels"], result["scores"]))
-        h_score = score_map[hawkish_label]
-        d_score = score_map[dovish_label]
-        n_score = score_map[neutral_label]
+        
+        # Averaging/summing the multiple labels into a single score for the logic below
+        h_score = sum(score_map[l] for l in hawkish_labels)
+        d_score = sum(score_map[l] for l in dovish_labels)
+        n_score = sum(score_map[l] for l in neutral_labels)
+        
         probs = np.array([h_score, d_score, n_score])
         chunk_entropy = stats.entropy(probs, base = 2)
         if chunk_entropy > EntropyThreshold:
@@ -85,12 +88,12 @@ def main():
         text = re.sub(r"[\r\s]+", " ", text)
         text = re.sub(r"[\r\n]+", " ", text)
         text = sent_tokenize(text)
-        outputs = zero_shot_classifier(text, candidate_labels = LABELS, multi_label=False,
+        outputs = zero_shot_classifier(text, candidate_labels = ALL_LABELS, multi_label=False,
                                             hypothesis_template="The sentiment of this monetary policy statement reflects {}.", batch_size = 32)
         sent_score = sentiment_score(outputs)
         FINAL_SENTIMENT_SCORE[file_name] = float(sent_score)
     print(FINAL_SENTIMENT_SCORE)
-    with open("data/raw_sentiment_scores.json", "w") as file:
+    with open("data/final_sentiment_score_1.json", "w") as file:
         json.dump(FINAL_SENTIMENT_SCORE, file, indent =  4)
 
 if __name__ == "__main__":
