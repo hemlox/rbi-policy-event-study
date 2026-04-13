@@ -10,11 +10,7 @@ def fetch_index_data(ticker_symbol, start_date, end_date):
        df["Ticker"] = ticker_symbol
        return df
 def main():
-    sectoral_tickers = [
-        "^NSEBANK", "^CNXAUTO", "^CNXIT", "^CNXFMCG", "^CNXPHARMA", 
-        "^CNXMETAL", "^CNXREALTY", "^CNXENERGY", "^CNXMEDIA", 
-        "^CNXPSUBANK", "NIFTY_FIN_SERVICE.NS", "NIFTY_PVT_BANK.NS"
-    ]
+    sectoral_tickers =["^NSEBANK","^CNXAUTO","^CNXIT","^CNXFMCG","^CNXPHARMA","^CNXPSUBANK", "^CNXREALTY","^CNXENERGY"]
     benchmark_ticker = "^NSEI"
     frames = []
     
