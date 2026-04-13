@@ -10,15 +10,19 @@ def fetch_index_data(ticker_symbol, start_date, end_date):
        df["Ticker"] = ticker_symbol
        return df
 def main():
-    tickers =["^NSEBANK","^CNXAUTO","^CNXIT","^CNXFMCG","^CNXPHARMA","^CNXMETAL","^CNXREALTY","^CNXENERGY","^CNXMEDIA","^CNXPSUBANK","NIFTY_FIN_SERVICE.NS","NIFTY_PVT_BANK.NS"]
-    frames=[]
-    for ticker in tickers:
-          df = fetch_index_data(ticker, "2016-09-01", "2026-03-16" )
-          frames.append(df)
+    sectoral_tickers = [
+        "^NSEBANK", "^CNXAUTO", "^CNXIT", "^CNXFMCG", "^CNXPHARMA", 
+        "^CNXMETAL", "^CNXREALTY", "^CNXENERGY", "^CNXMEDIA", 
+        "^CNXPSUBANK", "NIFTY_FIN_SERVICE.NS", "NIFTY_PVT_BANK.NS"
+    ]
+    benchmark_ticker = "^NSEI"
+    frames = []
+    
+    for ticker in sectoral_tickers + [benchmark_ticker]:
+          df = fetch_index_data(ticker, "2016-09-01", "2026-03-16")
+          frames.append(df)       
     df = pd.concat(frames)
     df.to_csv(path_or_buf = "data/raw_market_data.csv")
 
 if __name__ == "__main__":   
     sys.exit(main())
-    
-   
