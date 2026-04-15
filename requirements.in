@@ -1,0 +1,13 @@
+--extra-index-url https://download.pytorch.org/whl/cu124
+nltk==3.9.4
+numpy==2.4.4
+pandas==3.0.2
+pymupdf==1.27.2.2
+regex==2026.4.4
+Requests==2.33.1
+scipy==1.17.1
+selenium==4.43.0
+statsmodels==0.14.6
+torch==2.6.0+cu124
+transformers==5.5.3
+yfinance==1.2.0
